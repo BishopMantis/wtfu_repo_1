@@ -5,7 +5,7 @@ compatibility_date = "2024-09-23"
 [[d1_databases]]
 binding = "DB"
 database_name = "wtfu-db"
-database_id = "REPLACE_AFTER_WRANGLER_D1_CREATE"
+database_id = "f1d8a17f-a777-4c4a-a7e5-aeaa827fc84a"
 
 [[r2_buckets]]
 binding = "UPLOADS"
