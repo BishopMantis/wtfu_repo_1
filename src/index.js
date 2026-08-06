@@ -101,7 +101,7 @@ async function handleCreateSubmission(request, env) {
   const body = await request.json().catch(() => null);
   if (!body) return json({ error: "invalid JSON body" }, 400);
 
-  const { player_id, prompt_id, round, points, media_url } = body;
+  const { player_id, prompt_id, round, points, media_url, text_answer } = body;
 
   if (typeof player_id !== "string" || !player_id.trim()) {
     return json({ error: "player_id is required" }, 400);
@@ -123,12 +123,44 @@ async function handleCreateSubmission(request, env) {
 
   const id = crypto.randomUUID();
   const created_at = Math.floor(Date.now() / 1000);
+  const textAnswer = typeof text_answer === "string" ? text_answer.trim().slice(0, 500) || null : null;
 
   await env.DB.prepare(
-    "INSERT INTO submissions (id, player_id, prompt_id, round, points, media_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).bind(id, player_id, prompt_id, round, points, media_url || null, created_at).run();
+    "INSERT INTO submissions (id, player_id, prompt_id, round, points, media_url, text_answer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(id, player_id, prompt_id, round, points, media_url || null, textAnswer, created_at).run();
 
   return json({ id, created_at }, 201);
+}
+
+async function handleFeed(url, env) {
+  const roundParam = url.searchParams.get("round");
+  let round = null;
+
+  if (roundParam !== null) {
+    round = Number(roundParam);
+    if (!VALID_ROUNDS.includes(round)) {
+      return json({ error: "round must be 1, 2, or 3" }, 400);
+    }
+  }
+
+  const limitParam = Number(url.searchParams.get("limit"));
+  const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 100) : 50;
+
+  const query = round
+    ? `SELECT s.id, s.player_id, s.prompt_id, s.round, s.points, s.media_url, s.text_answer, s.created_at,
+              p.name, p.avatar
+       FROM submissions s JOIN players p ON p.id = s.player_id
+       WHERE s.round = ?
+       ORDER BY s.created_at DESC LIMIT ?`
+    : `SELECT s.id, s.player_id, s.prompt_id, s.round, s.points, s.media_url, s.text_answer, s.created_at,
+              p.name, p.avatar
+       FROM submissions s JOIN players p ON p.id = s.player_id
+       ORDER BY s.created_at DESC LIMIT ?`;
+
+  const stmt = round ? env.DB.prepare(query).bind(round, limit) : env.DB.prepare(query).bind(limit);
+  const { results } = await stmt.all();
+
+  return json({ round, feed: results });
 }
 
 async function handleLeaderboard(url, env) {
@@ -184,6 +216,9 @@ export default {
       }
       if (pathname === "/api/leaderboard" && method === "GET") {
         return withCors(await handleLeaderboard(url, env));
+      }
+      if (pathname === "/api/feed" && method === "GET") {
+        return withCors(await handleFeed(url, env));
       }
 
       return withCors(json({ error: "not found" }, 404));

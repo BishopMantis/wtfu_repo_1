@@ -13,6 +13,7 @@ CREATE TABLE submissions (
   round INTEGER NOT NULL,       -- 1, 2, or 3
   points INTEGER NOT NULL,
   media_url TEXT,               -- R2 key/URL, null for text-proof prompts
+  text_answer TEXT,             -- typed answer for text-proof prompts, null otherwise
   created_at INTEGER NOT NULL   -- server timestamp -- needed for tie-break later
 );
 
