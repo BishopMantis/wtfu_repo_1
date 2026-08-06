@@ -924,7 +924,7 @@ function renderAvatarClip(p){
     const hex = (AVATAR_COLORS.find(c => c.id === myAvatar.color) || {}).hex || "#7CE117";
     return `<span class="icon-fill in">${avatarSVG(myAvatar.shape, hex, 40)}</span>`;
   }
-  return `<img src="${face(5)}" alt="" loading="lazy" onload="this.classList.add('in')" onerror="this.remove()">`;
+  return `<span class="icon-fill in">${avatarSVG("star", "#9C49D1", 40)}</span>`;
 }
 
 const PROMPTS = [
@@ -1649,7 +1649,11 @@ let pendingAvatarFile = null;
 function maybeShowAvatarGate(){
   let seen = false;
   try { seen = !!localStorage.getItem(AVATAR_SEEN_KEY); } catch(e){}
-  if (!seen) buildAvatarGate(); else maybeShowFollowGate();
+  /* a photo avatar's bytes never survive a reload (loadAvatar drops
+     them on purpose), so "seen" alone isn't enough — without this,
+     someone who picked a photo once would never see the gate again
+     and would be stuck on the fallback icon forever */
+  if (!seen || !myAvatar) buildAvatarGate(); else maybeShowFollowGate();
 }
 
 function buildAvatarGate(){
@@ -1720,6 +1724,18 @@ function buildAvatarGate(){
     const btn = document.getElementById('avatarContinue');
     const prevLabel = btn.textContent;
     btn.disabled = true; btn.textContent = "Joining\u2026";
+    /* already registered (e.g. the gate re-opened only because a
+       photo avatar's bytes didn't survive a reload) \u2014 this is just
+       a local re-pick, registering again would create a duplicate
+       player and orphan their existing submissions */
+    if (myPlayerId) {
+      saveAvatar(pendingAvatar);
+      try { localStorage.setItem(AVATAR_SEEN_KEY, "1"); } catch(e){}
+      render();
+      wrap.classList.add('closing');
+      setTimeout(() => { wrap.remove(); maybeShowFollowGate(); }, 300);
+      return;
+    }
     try {
       const avatarStr = pendingAvatar.type === "photo"
         ? "photo:" + (await apiUploadFile(pendingAvatarFile)).key
