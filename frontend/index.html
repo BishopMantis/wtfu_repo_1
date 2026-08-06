@@ -872,13 +872,13 @@ async function apiFetchTakenAvatars(){
   } catch(e){ return []; }
 }
 
-async function apiSubmit(promptId, round, points, mediaUrl){
+async function apiSubmit(promptId, round, points, mediaUrl, textAnswer){
   if (!myPlayerId) return;
   try {
     await fetch(API_BASE + "/api/submissions", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ player_id: myPlayerId, prompt_id: promptId, round, points, media_url: mediaUrl || null })
+      body: JSON.stringify({ player_id: myPlayerId, prompt_id: promptId, round, points, media_url: mediaUrl || null, text_answer: textAnswer || undefined })
     });
   } catch(e){ /* best-effort — local score already stands */ }
 }
@@ -892,6 +892,37 @@ async function refreshRealLeaderboard(round){
     realLeaderboardCache[round] = data.leaderboard || [];
     if (activeRound === round) render();
   } catch(e){ /* best-effort — keep showing whatever we had */ }
+}
+
+let realFeedCache = {1:[], 2:[], 3:[]};
+async function refreshRealFeed(round){
+  try {
+    const res = await fetch(API_BASE + "/api/feed?round=" + round);
+    if (!res.ok) return;
+    const data = await res.json();
+    realFeedCache[round] = data.feed || [];
+    if (activeRound === round) renderPane();
+  } catch(e){ /* best-effort — keep showing whatever we had */ }
+}
+
+/* turns a raw /api/feed row (from any player, any device) into the
+   same post shape postHTML() already knows how to render, so the
+   real feed and the local demo/own-submission feed share one
+   rendering path */
+function feedItemFromReal(row){
+  if (row.player_id === myPlayerId) return null;  // your own posts already render instantly from local state
+  const prompt = PROMPTS.find(p => p.id === row.prompt_id);
+  const isText = prompt ? prompt.proof === "text" : (!row.media_url);
+  const isVideo = prompt ? prompt.proof === "video" : false;
+  return mk({
+    who: (row.name || "Player").split(" ")[0],
+    kind: isText ? "text" : (isVideo ? "video" : "photo"),
+    quote: isText ? (row.text_answer || "(no answer saved)") : undefined,
+    src: !isText ? row.media_url : undefined,
+    cap: prompt ? (prompt.text.length > 40 ? prompt.text.slice(0,40) + "…" : prompt.text) : undefined,
+    ts: "",
+    real: true
+  });
 }
 
 const AVATAR_KEY = "wtfu_avatar_v22";
@@ -1031,15 +1062,31 @@ function eventState(mins){
   return { phase:"done", round:3, target:null };
 }
 
+/* DEMO_MODE runs the old fake clock (fixed start, jump-around
+   checkpoints, good for walkthroughs). With it off, every device
+   reads its own real clock — since ROUND_WINDOWS is already
+   authored in real minutes-since-midnight, everyone's phone lands
+   on the same round/phase/countdown automatically, no server
+   round-trip or shared timestamp needed, just phones agreeing on
+   what time it is. */
+function currentClockReading(){
+  if (DEMO_MODE) return { mins: simMinutes, secs: simSeconds };
+  const d = new Date();
+  return { mins: d.getHours()*60 + d.getMinutes(), secs: d.getSeconds() };
+}
+
 function fmt(secs){
   const h = Math.floor(secs/3600), m = Math.floor(secs%3600/60), s = secs%60;
   return h + ":" + String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
 }
 
 function tickClock(){
-  simSeconds++;
-  if (simSeconds >= 60) { simSeconds = 0; simMinutes++; }
-  const st = eventState(simMinutes);
+  if (DEMO_MODE) {
+    simSeconds++;
+    if (simSeconds >= 60) { simSeconds = 0; simMinutes++; }
+  }
+  const { mins, secs } = currentClockReading();
+  const st = eventState(mins);
   const changed = (st.phase !== phase) || (st.round !== activeRound);
   phase = st.phase; activeRound = st.round;
   document.body.dataset.round = activeRound;
@@ -1052,7 +1099,7 @@ function tickClock(){
     document.getElementById('ckCap').textContent = "game closed";
     card.classList.remove('closing'); card.classList.add('locked');
   } else {
-    const secsLeft = Math.max((st.target - simMinutes)*60 - simSeconds, 0);
+    const secsLeft = Math.max((st.target - mins)*60 - secs, 0);
     document.getElementById('ckTime').textContent = fmt(secsLeft);
     if (phase === "live") {
       document.getElementById('ckRound').innerHTML = "Round <b>" + activeRound + "</b>";
@@ -1072,6 +1119,7 @@ function tickClock(){
     view = { mode:"buckets", bucket:null };
     render();
     refreshRealLeaderboard(activeRound);
+    refreshRealFeed(activeRound);
     if (phase === "live") toast("Round " + activeRound + " is live — all 33 prompts open, board back to zero");
     else if (phase === "break") toast("Round closed. Top 3 locked in — next round opens on the clock.");
   }
@@ -1090,7 +1138,7 @@ const CHECKPOINTS = [
 let cpIdx = 0, holdTimer = null;
 (function bindDemo(){
   const h = document.getElementById('demoHandle');
-  const start = () => { holdTimer = setTimeout(() => {
+  const start = () => { if (!DEMO_MODE) return; holdTimer = setTimeout(() => {
     cpIdx = (cpIdx + 1) % CHECKPOINTS.length;
     simMinutes = CHECKPOINTS[cpIdx].m; simSeconds = 0;
     const st = eventState(simMinutes); phase = st.phase; activeRound = st.round;
@@ -1261,8 +1309,9 @@ function submit(id){
         const up = await apiUploadFile(fileToUpload);
         mediaUrl = up.url ? (API_BASE + up.url) : null;
       }
-      await apiSubmit(id, submittedRound, p.pts, mediaUrl);
+      await apiSubmit(id, submittedRound, p.pts, mediaUrl, isText ? typed : undefined);
       refreshRealLeaderboard(submittedRound);
+      refreshRealFeed(submittedRound);
     } catch(e){ /* best-effort — local state already reflects the submission */ }
   })();
 
@@ -1429,7 +1478,8 @@ function renderPane(){
   const done = R().done;
   const title = document.getElementById('paneTitle');
   const count = document.getElementById('paneCount');
-  const feed = [...R().feed, ...live];
+  const realFeedItems = (realFeedCache[activeRound] || []).map(feedItemFromReal).filter(Boolean);
+  const feed = [...R().feed, ...realFeedItems, ...live];
 
   const feedBlock = `
     <div class="feed-section" id="feedSection">
@@ -1804,7 +1854,7 @@ function buildFollowGate(){
   document.getElementById('headerLogo').src = LOGO_SRC;
   loadProgress();
   loadAvatar();
-  const st = eventState(simMinutes);
+  const st = eventState(currentClockReading().mins);
   phase = st.phase; activeRound = st.round;
   document.body.dataset.round = activeRound;
   render(); tickClock();
@@ -1812,6 +1862,8 @@ function buildFollowGate(){
 
   refreshRealLeaderboard(activeRound);
   setInterval(() => refreshRealLeaderboard(activeRound), 10000);
+  refreshRealFeed(activeRound);
+  setInterval(() => refreshRealFeed(activeRound), 10000);
 
   let entrySeen = false;
   try { entrySeen = !!localStorage.getItem(ENTRY_KEY); } catch(e){}
