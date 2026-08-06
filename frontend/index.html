@@ -819,6 +819,12 @@ const MOCK_AVATARS = {
    unavailable the game keeps working in local-only mode exactly
    like it did before this was wired up.
    ============================================================ */
+/* Set to false right before the real event goes live — hides the
+   canned demo leaderboard names and the fake activity feed, leaving
+   only real registered players. Not exposed anywhere in the UI;
+   only a code push can change this. */
+const DEMO_MODE = true;
+
 const API_BASE = "https://wtfu-repo-1.justinlm808.workers.dev";
 const PLAYER_ID_KEY = "wtfu_player_id_v1";
 let myPlayerId = null;
@@ -1008,7 +1014,7 @@ const INCOMING = [
 let simMinutes = 12*60 + 5, simSeconds = 0;
 let phase = "live", activeRound = 1;
 let view = { mode:"buckets", bucket:null };
-let live = [...MOCK_FEED];
+let live = DEMO_MODE ? [...MOCK_FEED] : [];
 let incomingIdx = 0, newUid = null;
 
 const rounds = {1:{done:[],feed:[]}, 2:{done:[],feed:[]}, 3:{done:[],feed:[]}};
@@ -1394,7 +1400,7 @@ function render(){
   const realRows = (realLeaderboardCache[activeRound] || [])
     .filter(r => r.id !== myPlayerId)
     .map(r => ({ i:(r.name || "Player").split(" ")[0], s:r.score, real:true, avatarStr:r.avatar }));
-  const board = [...MOCK[activeRound], ...realRows, {i:"You", s:score, me:true, a:5}].sort((a,b) => b.s - a.s);
+  const board = [...(DEMO_MODE ? MOCK[activeRound] : []), ...realRows, {i:"You", s:score, me:true, a:5}].sort((a,b) => b.s - a.s);
   const RANK_BG = {1:"var(--yellow)", 2:"var(--white)", 3:"var(--pink)"};
   document.getElementById('leaderboard').innerHTML = board.map((p, idx) => {
     const rank = idx + 1;
@@ -1524,7 +1530,7 @@ function stagger(nodes){
 }
 
 setInterval(() => {
-  if (phase !== "live" || incomingIdx >= INCOMING.length) return;
+  if (!DEMO_MODE || phase !== "live" || incomingIdx >= INCOMING.length) return;
   live.unshift(INCOMING[incomingIdx]);
   newUid = INCOMING[incomingIdx].uid;
   incomingIdx++;
@@ -1567,7 +1573,7 @@ function resetDemo(){
   [1,2,3].forEach(r => { rounds[r].done = []; rounds[r].feed = []; });
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
   simMinutes = 12*60 + 5; simSeconds = 0;
-  incomingIdx = 0; live = [...MOCK_FEED];
+  incomingIdx = 0; live = DEMO_MODE ? [...MOCK_FEED] : [];
   view = { mode:"buckets", bucket:null };
   const st = eventState(simMinutes); phase = st.phase; activeRound = st.round;
   document.body.dataset.round = activeRound;
@@ -1652,7 +1658,7 @@ function buildAvatarGate(){
   wrap.id = 'avatarGate';
 
   const grid = SHAPE_IDS.map(shape => AVATAR_COLORS.map(col => {
-    const taken = Object.values(MOCK_AVATARS).some(a => a.shape === shape && a.color === col.id);
+    const taken = DEMO_MODE && Object.values(MOCK_AVATARS).some(a => a.shape === shape && a.color === col.id);
     const id = shape + "-" + col.id;
     return `<button type="button" class="icon-token ${taken ? 'taken' : ''}" data-id="${id}"
               ${taken ? 'disabled' : `onclick="pickAvatarIcon('${shape}','${col.id}')"`}>
