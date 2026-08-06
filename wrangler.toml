@@ -1,0 +1,12 @@
+name = "wtfu-backend"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wtfu-db"
+database_id = "REPLACE_AFTER_WRANGLER_D1_CREATE"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "wtfu-uploads"

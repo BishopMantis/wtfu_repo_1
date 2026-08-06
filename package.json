@@ -1,0 +1,13 @@
+{
+  "name": "wtfu-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:schema": "wrangler d1 execute wtfu-db --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.119.0"
+  }
+}
