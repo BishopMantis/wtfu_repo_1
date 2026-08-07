@@ -155,12 +155,6 @@ button{ font-family:inherit; color:inherit; }
   text-transform:uppercase; letter-spacing:-.01em; border-radius:12px;
   padding:10px 14px; margin:0 0 16px; box-shadow:5px 5px 0 rgba(0,0,0,.14);
 }
-.gallery-link{
-  display:block; width:100%; margin-top:9px; padding:9px; background:none;
-  border:1px solid var(--ink-4); border-radius:10px; cursor:pointer;
-  font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.08em;
-  text-transform:uppercase; color:var(--ink-2); text-align:center;
-}
 .leaderboard-row{ display:flex; justify-content:center; align-items:flex-end; gap:22px; }
 .lb-chip{ min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; width:64px; }
 .lb-av{
@@ -670,7 +664,6 @@ textarea::placeholder{ color:var(--ink-4); }
   <div class="leaderboard-row" id="leaderboard"></div>
   <div class="you-row" id="youRow"></div>
   <div class="prize-note" id="prizeNote">Top 3 when the clock hits zero take the round</div>
-  <button type="button" class="gallery-link" onclick="openGallery()">See full gallery — all rounds →</button>
 </div>
 
 <div class="pane-header">
@@ -1628,7 +1621,7 @@ function renderPane(){
       <div class="section-label">
         <span class="grp"><span class="ttl">Live feed</span>
           <span class="live-tag"><i></i><span>LIVE</span></span></span>
-        <span class="aside">what people are posting</span>
+        <button type="button" class="aside" style="background:none;border:none;padding:0;font:inherit;cursor:pointer;text-decoration:underline" onclick="openGallery()">See full gallery →</button>
       </div>
       <div class="feed-grid">${feed.map(postHTML).join("")}</div>
     </div>`;
