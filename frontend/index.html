@@ -240,20 +240,7 @@ button{ font-family:inherit; color:inherit; }
   transition:transform .13s ease, box-shadow .13s ease, background .5s var(--ease);
 }
 .bucket:active{ transform:translate(3px,3px); box-shadow:0 0 0 var(--black); }
-/* vintage-comic halftone texture — off by default look stays exactly
-   as designed; toggled on via the footer switch. Dot grid + a soft
-   radial highlight, multiplied over the tier color like old
-   Ben-Day-dot print plates rather than flat digital color. */
-body.texture-on .bucket::before{
-  content:""; position:absolute; inset:0; z-index:0; pointer-events:none; border-radius:inherit;
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,.3) 1px, transparent 1.4px),
-    radial-gradient(circle at 25% 15%, rgba(255,255,255,.3), transparent 60%);
-  background-size: 6px 6px, 100% 100%;
-  mix-blend-mode: soft-light;
-  opacity:.7;
-}
-.bucket .motion{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-start; width:100%; }
+.bucket .motion{ display:flex; flex-direction:column; align-items:flex-start; width:100%; }
 .pt-chip{
   display:flex; flex-direction:column; align-items:flex-start;
   background:var(--white); border:1.5px solid var(--black); border-radius:8px;
@@ -278,7 +265,7 @@ body.texture-on .bucket::before{
 .mini-card.mc3{ top:22px;transform:rotate(-2deg);  z-index:1; opacity:.82; }
 .bucket .avail{ font-size:9.5px; font-weight:600; color:var(--ink-3); }
 .bucket .avail.scarce{ color:var(--white); font-weight:700; background:var(--black); padding:1px 5px; border-radius:3px; }
-.bucket .fill{ position:absolute; left:0; bottom:0; height:4px; background:var(--black); transition:width .6s var(--ease); z-index:1; }
+.bucket .fill{ position:absolute; left:0; bottom:0; height:4px; background:var(--black); transition:width .6s var(--ease); }
 /* Fixed per-difficulty colour, independent of round — 10/15/20 are
    the easy tier, 25/30/35 medium, 40/45/50 hard. Unlike the round
    accent elsewhere, these don't shift when the round changes;
@@ -429,12 +416,6 @@ footer.nav{
 }
 footer.nav .fl{ font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); cursor:default; user-select:none; }
 footer.nav .reset{ background:none; border:none; font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); cursor:pointer; text-decoration:underline; padding:0; }
-footer.nav .toggle-chip{
-  font-family:var(--mono); font-size:7.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-  padding:3px 9px; border-radius:20px; border:1px solid rgba(255,255,255,.35); background:none;
-  color:rgba(255,255,255,.55); cursor:pointer;
-}
-footer.nav .toggle-chip.on{ background:var(--green); border-color:var(--green); color:#000; }
 
 /* ---------- sheet ---------- */
 .overlay{
@@ -707,7 +688,6 @@ textarea::placeholder{ color:var(--ink-4); }
 
 <footer class="nav">
   <span class="fl" id="demoHandle">WTFU</span>
-  <button type="button" class="toggle-chip" id="textureToggle" onclick="toggleTexture()">Texture: On</button>
   <button class="reset" onclick="resetDemo()">Reset</button>
 </footer>
 
@@ -928,32 +908,6 @@ const MOCK_AVATARS = {
    only real registered players. Not exposed anywhere in the UI;
    only a code push can change this. */
 const DEMO_MODE = true;
-
-/* client-visible toggle (unlike DEMO_MODE) — lets you flip the
-   vintage halftone texture on the prompt cards on/off live to
-   compare against the original flat-color look, without a code
-   push. Defaults on; persists per-browser. */
-const TEXTURE_KEY = "wtfu_texture_v1";
-let textureOn = true;
-try {
-  const savedTexture = localStorage.getItem(TEXTURE_KEY);
-  if (savedTexture !== null) textureOn = savedTexture === "1";
-} catch(e){}
-
-function applyTextureToggle(){
-  document.body.classList.toggle('texture-on', textureOn);
-  const btn = document.getElementById('textureToggle');
-  if (btn) {
-    btn.textContent = 'Texture: ' + (textureOn ? 'On' : 'Off');
-    btn.classList.toggle('on', textureOn);
-  }
-}
-function toggleTexture(){
-  haptic(8);
-  textureOn = !textureOn;
-  try { localStorage.setItem(TEXTURE_KEY, textureOn ? "1" : "0"); } catch(e){}
-  applyTextureToggle();
-}
 
 const API_BASE = "https://wtfu-repo-1.justinlm808.workers.dev";
 const PLAYER_ID_KEY = "wtfu_player_id_v1";
@@ -2043,7 +1997,6 @@ function buildFollowGate(){
 
 (function boot(){
   document.getElementById('headerLogo').src = LOGO_SRC;
-  applyTextureToggle();
   loadProgress();
   loadAvatar();
   const st = eventState(currentClockReading().mins);
