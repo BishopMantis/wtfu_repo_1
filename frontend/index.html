@@ -1617,7 +1617,7 @@ function renderPane(){
       <div class="section-label">
         <span class="grp"><span class="ttl">Live feed</span>
           <span class="live-tag"><i></i><span>LIVE</span></span></span>
-        <button type="button" class="aside" style="background:none;border:none;padding:0;font:inherit;cursor:pointer;text-decoration:underline" onclick="openGallery()">See full gallery →</button>
+        <button type="button" style="background:none;border:none;padding:0;cursor:pointer;text-decoration:underline;font-family:var(--display);font-weight:900;font-size:9.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-2)" onclick="openGallery()">See full gallery →</button>
       </div>
       <div class="feed-grid">${feed.map(postHTML).join("")}</div>
     </div>`;
