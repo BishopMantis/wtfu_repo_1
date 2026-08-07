@@ -58,11 +58,10 @@
   --body:"Garet",-apple-system,sans-serif;
   --mono:"Courier Prime",monospace;           /* real brand font */
   --ease:cubic-bezier(.22,1,.36,1); --spring:cubic-bezier(.34,1.4,.5,1);
+  /* accent stays green across every round — no longer shifts color
+     per round (used to go blue for round 2, purple for round 3) */
   --accent:var(--green); --on-accent:#000; --tint:124,225,23;
 }
-body[data-round="1"]{ --accent:#7CE117; --on-accent:#000; --tint:124,225,23; }
-body[data-round="2"]{ --accent:#0024FD; --on-accent:#fff; --tint:0,36,253; }
-body[data-round="3"]{ --accent:#9C49D1; --on-accent:#fff; --tint:156,73,209; }
 
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html{
