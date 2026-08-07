@@ -161,10 +161,10 @@ button{ font-family:inherit; color:inherit; }
   font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.08em;
   text-transform:uppercase; color:var(--ink-2); text-align:center;
 }
-.leaderboard-row{ display:grid; grid-template-columns:repeat(6,1fr); gap:5px; }
-.lb-chip{ min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.leaderboard-row{ display:flex; justify-content:center; align-items:flex-end; gap:22px; }
+.lb-chip{ min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; width:64px; }
 .lb-av{
-  position:relative; width:100%; max-width:44px; aspect-ratio:1/1; border-radius:50%;
+  position:relative; width:100%; max-width:58px; aspect-ratio:1/1; border-radius:50%;
   border:2px solid var(--black); background:var(--paper-2);
 }
 .lb-av .clip{ position:absolute; inset:0; border-radius:50%; overflow:hidden; }
@@ -180,11 +180,38 @@ button{ font-family:inherit; color:inherit; }
   background:var(--accent); color:var(--on-accent); font-size:7px; border:2px solid var(--black);
   display:flex; align-items:center; justify-content:center; transition:background .7s var(--ease);
 }
-.lb-chip.prize .lb-av{ box-shadow:0 0 0 3px var(--paper), 0 0 0 5px var(--black); }
 .lb-chip.me .lb-av{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(var(--tint),.35); }
+/* medal rings — gold is the thickest / most glow, bronze the least,
+   so first place visibly outranks second, second outranks third.
+   Comes after .me so a top-3 "you" still shows the medal, not just
+   the generic accent ring — the star badge already marks "this is you". */
+.lb-chip.r1 .lb-av{ border-width:3px; border-color:#E8B923; box-shadow:0 0 0 3px rgba(232,185,35,.4), 0 0 16px 2px rgba(232,185,35,.55); }
+.lb-chip.r2 .lb-av{ border-width:2.5px; border-color:#B9C0C8; box-shadow:0 0 0 2px rgba(185,192,200,.35), 0 0 10px 1px rgba(185,192,200,.4); }
+.lb-chip.r3 .lb-av{ border-width:2px; border-color:#CD7F32; box-shadow:0 0 0 2px rgba(205,127,50,.3), 0 0 7px rgba(205,127,50,.3); }
 .lb-name{ font-size:10px; font-weight:600; color:var(--ink-2); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lb-chip.me .lb-name{ color:var(--ink); font-weight:700; }
 .lb-score{ font-family:var(--display); font-weight:900; font-size:15px; line-height:1; }
+
+.you-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:16px; }
+.you-row .you-chip{ display:flex; align-items:center; gap:8px; min-width:0; }
+.you-row .you-chip .lb-av{ max-width:38px; flex-shrink:0; }
+.you-row .you-text{ min-width:0; display:flex; flex-direction:column; }
+.you-row .you-name{ font-size:10.5px; font-weight:700; color:var(--ink-3); text-transform:uppercase; letter-spacing:.04em; }
+.you-row .you-score{ font-family:var(--display); font-weight:900; font-size:16px; line-height:1.1; }
+.see-all-btn{
+  flex-shrink:0; background:none; border:1px solid var(--ink-4); border-radius:10px;
+  padding:9px 13px; font-family:var(--mono); font-size:8.5px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); cursor:pointer;
+}
+
+.rank-list{ display:flex; flex-direction:column; gap:7px; }
+.rank-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--ink-4); border-radius:11px; }
+.rank-row.me{ border-color:var(--accent); background:rgba(var(--tint),.08); }
+.rank-row .rk-num{ font-family:var(--display); font-weight:900; font-size:13px; width:20px; text-align:center; flex-shrink:0; color:var(--ink-3); }
+.rank-row .rk-av{ position:relative; width:32px; height:32px; border-radius:50%; border:2px solid var(--black); background:var(--paper-2); flex-shrink:0; overflow:hidden; }
+.rank-row .rk-av img{ width:100%; height:100%; object-fit:cover; }
+.rank-row .rk-name{ flex:1; min-width:0; font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rank-row .rk-score{ font-family:var(--display); font-weight:900; font-size:14px; flex-shrink:0; }
 
 /* ---------- scroll pane ---------- */
 .pane-header{ position:relative; z-index:2; flex-shrink:0; padding:0 14px 9px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -641,6 +668,7 @@ textarea::placeholder{ color:var(--ink-4); }
     <span class="aside" id="boardAside">Top 3 win</span>
   </div>
   <div class="leaderboard-row" id="leaderboard"></div>
+  <div class="you-row" id="youRow"></div>
   <div class="prize-note" id="prizeNote">Top 3 when the clock hits zero take the round</div>
   <button type="button" class="gallery-link" onclick="openGallery()">See full gallery — all rounds →</button>
 </div>
@@ -668,6 +696,13 @@ textarea::placeholder{ color:var(--ink-4); }
   <div class="sheet">
     <div class="grabber"></div>
     <div class="sheet-body" id="galleryBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="playersSheet" onclick="if(event.target===this) closeSheet('playersSheet')">
+  <div class="sheet">
+    <div class="grabber"></div>
+    <div class="sheet-body" id="playersBody"></div>
   </div>
 </div>
 
@@ -992,6 +1027,23 @@ function renderGallery(rows){
   body.innerHTML = `<h2 class="gallery-title">Full gallery</h2>` + sections;
 }
 
+/* Full ranked list, all players — the top-3 podium up top only shows
+   three circles, this is where "where do I actually stand" and
+   "who's everyone else" lives. Reads currentBoard, set by the last
+   render(), so it's always in sync with what's on screen. */
+function openPlayers(){
+  openSheet('playersSheet');
+  const body = document.getElementById('playersBody');
+  body.innerHTML = `<h2 class="gallery-title">All players</h2>` +
+    `<div class="rank-list">${currentBoard.map((p, idx) => `
+      <div class="rank-row ${p.me ? 'me' : ''}">
+        <span class="rk-num">${idx + 1}</span>
+        <span class="rk-av">${renderAvatarClip(p)}</span>
+        <span class="rk-name">${p.i}${p.me ? ' (You)' : ''}</span>
+        <span class="rk-score">${p.s}</span>
+      </div>`).join("")}</div>`;
+}
+
 const AVATAR_KEY = "wtfu_avatar_v22";
 let myAvatar = null;   // {type:'icon',shape,color} | {type:'photo',src}
 
@@ -1111,6 +1163,7 @@ const INCOMING = [
 let simMinutes = 12*60 + 5, simSeconds = 0;
 let phase = "live", activeRound = 1;
 let view = { mode:"buckets", bucket:null };
+let currentBoard = [];  // full sorted leaderboard from the last render(), for the "See all players" sheet
 let live = DEMO_MODE ? [...MOCK_FEED] : [];
 let incomingIdx = 0, newUid = null;
 
@@ -1525,20 +1578,34 @@ function render(){
     .filter(r => r.id !== myPlayerId)
     .map(r => ({ i:(r.name || "Player").split(" ")[0], s:r.score, real:true, avatarStr:r.avatar }));
   const board = [...(DEMO_MODE ? MOCK[activeRound] : []), ...realRows, {i:"You", s:score, me:true, a:5}].sort((a,b) => b.s - a.s);
-  const RANK_BG = {1:"var(--yellow)", 2:"var(--white)", 3:"var(--pink)"};
-  document.getElementById('leaderboard').innerHTML = board.map((p, idx) => {
+  currentBoard = board;  // full order, kept for the "See all players" sheet
+  const RANK_BG = {1:"#E8B923", 2:"#B9C0C8", 3:"#CD7F32"};
+
+  document.getElementById('leaderboard').innerHTML = board.slice(0, 3).map((p, idx) => {
     const rank = idx + 1;
-    return `<div class="lb-chip ${p.me ? 'me' : ''} ${rank <= 3 ? 'prize r' + rank : ''}">
+    return `<div class="lb-chip ${p.me ? 'me' : ''} prize r${rank}">
       <span class="lb-av">
         <span class="clip">${renderAvatarClip(p)}</span>
-        ${rank <= 3 ? `<span class="sparks">${'<i></i>'.repeat(4 - rank)}</span>` : ``}
-        ${rank <= 3 ? `<span class="rank" style="background:${RANK_BG[rank]}">${rank}</span>` : ``}
+        <span class="sparks">${'<i></i>'.repeat(4 - rank)}</span>
+        <span class="rank" style="background:${RANK_BG[rank]}">${rank}</span>
         ${p.me ? `<span class="star">★</span>` : ``}
       </span>
       <span class="lb-name">${p.i}</span>
       <span class="lb-score">${p.s}</span>
     </div>`;
   }).join("");
+
+  const myRank = board.findIndex(p => p.me) + 1;
+  const me = board.find(p => p.me);
+  document.getElementById('youRow').innerHTML = `
+    <span class="you-chip">
+      <span class="lb-av"><span class="clip">${renderAvatarClip(me)}</span></span>
+      <span class="you-text">
+        <span class="you-name">You · #${myRank}</span>
+        <span class="you-score">${me.s} pts</span>
+      </span>
+    </span>
+    <button type="button" class="see-all-btn" onclick="openPlayers()">See all players →</button>`;
 
   document.getElementById('prizeNote').textContent = phase === "live"
     ? "Top 3 when the clock hits zero take the round"
