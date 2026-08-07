@@ -1135,10 +1135,20 @@ function eventState(mins){
    on the same round/phase/countdown automatically, no server
    round-trip or shared timestamp needed, just phones agreeing on
    what time it is. */
+/* Always reads Pacific time, regardless of what timezone the
+   visitor's phone happens to be set to — the event is anchored to
+   California local time (PST/PDT, whichever is in effect on the
+   actual date), not to each device's own clock setting. */
 function currentClockReading(){
   if (DEMO_MODE) return { mins: simMinutes, secs: simSeconds };
-  const d = new Date();
-  return { mins: d.getHours()*60 + d.getMinutes(), secs: d.getSeconds() };
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles', hour12: false,
+    hour: 'numeric', minute: 'numeric', second: 'numeric'
+  }).formatToParts(new Date());
+  const get = (t) => Number(parts.find((p) => p.type === t).value);
+  let hour = get('hour');
+  if (hour === 24) hour = 0;  // some engines report midnight as "24" with hour12:false
+  return { mins: hour * 60 + get('minute'), secs: get('second') };
 }
 
 function fmt(secs){
@@ -1271,7 +1281,7 @@ function openCard(id){
          </button>
        </div>
        <div class="capture-status" id="cdCaptureStatus">No ${PLABEL[p.proof].toLowerCase()} attached yet</div>
-       <input type="file" id="cdCaptureInput" accept="${p.proof === 'video' ? 'video/*' : 'image/*,video/*'}" capture="environment" style="display:none" onchange="fileChosen(this,'cdCaptureBtn')">
+       <input type="file" id="cdCaptureInput" accept="${p.proof === 'video' ? 'video/*' : 'image/*'}" capture="environment" style="display:none" onchange="fileChosen(this,'cdCaptureBtn')">
        <input type="file" id="cdUploadInput" accept="${p.proof === 'video' ? 'video/*' : 'image/*,video/*'}" style="display:none" onchange="fileChosen(this,'cdUploadBtn')">`;
   document.getElementById('cdBody').innerHTML = `
     <div class="cd-head">
