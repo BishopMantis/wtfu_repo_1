@@ -198,14 +198,12 @@ button{ font-family:inherit; color:inherit; }
   letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); cursor:pointer;
 }
 
-.rank-list{ display:flex; flex-direction:column; gap:7px; }
-.rank-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--ink-4); border-radius:11px; }
-.rank-row.me{ border-color:var(--accent); background:rgba(var(--tint),.08); }
-.rank-row .rk-num{ font-family:var(--display); font-weight:900; font-size:13px; width:20px; text-align:center; flex-shrink:0; color:var(--ink-3); }
-.rank-row .rk-av{ position:relative; width:32px; height:32px; border-radius:50%; border:2px solid var(--black); background:var(--paper-2); flex-shrink:0; overflow:hidden; }
-.rank-row .rk-av img{ width:100%; height:100%; object-fit:cover; }
-.rank-row .rk-name{ flex:1; min-width:0; font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rank-row .rk-score{ font-family:var(--display); font-weight:900; font-size:14px; flex-shrink:0; }
+.rank-list{ display:grid; grid-template-columns:repeat(5,1fr); gap:16px 4px; }
+.rank-list .lb-chip{ width:auto; gap:3px; }
+.rank-list .lb-chip .lb-av{ max-width:40px; }
+.rank-list .lb-chip .rank{ width:15px; height:15px; font-size:8px; top:-4px; right:-3px; }
+.rank-list .lb-chip .lb-name{ font-size:8.5px; }
+.rank-list .lb-chip .lb-score{ font-size:11px; }
 
 /* ---------- scroll pane ---------- */
 .pane-header{ position:relative; z-index:2; flex-shrink:0; padding:0 14px 9px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -727,6 +725,22 @@ const ROUND_WINDOWS = {
    again means editing ROUND_WINDOWS only, not five different arrays */
 const ROUND_IDS = Object.keys(ROUND_WINDOWS).map(Number);
 
+/* shared gold/silver/bronze badge colors — used by both the top-3
+   podium and the full "all players" list so they match exactly */
+const MEDAL_HEX = {1:"#E8B923", 2:"#B9C0C8", 3:"#CD7F32"};
+function rankChip(p, rank){
+  return `<div class="lb-chip ${p.me ? 'me' : ''} ${rank <= 3 ? 'prize r' + rank : ''}">
+    <span class="lb-av">
+      <span class="clip">${renderAvatarClip(p)}</span>
+      ${rank <= 3 ? `<span class="sparks">${'<i></i>'.repeat(4 - rank)}</span>` : ``}
+      <span class="rank" style="background:${MEDAL_HEX[rank] || '#e5e5e5'}">${rank}</span>
+      ${p.me ? `<span class="star">★</span>` : ``}
+    </span>
+    <span class="lb-name">${p.i}</span>
+    <span class="lb-score">${p.s}</span>
+  </div>`;
+}
+
 /* ------------------------------------------------------------
    DEMO IMAGERY
    Purpose-generated for WTFU rather than pulled from a stock
@@ -1028,13 +1042,7 @@ function openPlayers(){
   openSheet('playersSheet');
   const body = document.getElementById('playersBody');
   body.innerHTML = `<h2 class="gallery-title">All players</h2>` +
-    `<div class="rank-list">${currentBoard.map((p, idx) => `
-      <div class="rank-row ${p.me ? 'me' : ''}">
-        <span class="rk-num">${idx + 1}</span>
-        <span class="rk-av">${renderAvatarClip(p)}</span>
-        <span class="rk-name">${p.i}${p.me ? ' (You)' : ''}</span>
-        <span class="rk-score">${p.s}</span>
-      </div>`).join("")}</div>`;
+    `<div class="rank-list">${currentBoard.map((p, idx) => rankChip(p, idx + 1)).join("")}</div>`;
 }
 
 const AVATAR_KEY = "wtfu_avatar_v22";
@@ -1572,21 +1580,9 @@ function render(){
     .map(r => ({ i:(r.name || "Player").split(" ")[0], s:r.score, real:true, avatarStr:r.avatar }));
   const board = [...(DEMO_MODE ? MOCK[activeRound] : []), ...realRows, {i:"You", s:score, me:true, a:5}].sort((a,b) => b.s - a.s);
   currentBoard = board;  // full order, kept for the "See all players" sheet
-  const RANK_BG = {1:"#E8B923", 2:"#B9C0C8", 3:"#CD7F32"};
 
-  document.getElementById('leaderboard').innerHTML = board.slice(0, 3).map((p, idx) => {
-    const rank = idx + 1;
-    return `<div class="lb-chip ${p.me ? 'me' : ''} prize r${rank}">
-      <span class="lb-av">
-        <span class="clip">${renderAvatarClip(p)}</span>
-        <span class="sparks">${'<i></i>'.repeat(4 - rank)}</span>
-        <span class="rank" style="background:${RANK_BG[rank]}">${rank}</span>
-        ${p.me ? `<span class="star">★</span>` : ``}
-      </span>
-      <span class="lb-name">${p.i}</span>
-      <span class="lb-score">${p.s}</span>
-    </div>`;
-  }).join("");
+  document.getElementById('leaderboard').innerHTML = board.slice(0, 3)
+    .map((p, idx) => rankChip(p, idx + 1)).join("");
 
   const myRank = board.findIndex(p => p.me) + 1;
   const me = board.find(p => p.me);
