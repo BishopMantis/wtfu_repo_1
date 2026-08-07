@@ -416,6 +416,11 @@ footer.nav{
 }
 footer.nav .fl{ font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); cursor:default; user-select:none; }
 footer.nav .reset{ background:none; border:none; font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); cursor:pointer; text-decoration:underline; padding:0; }
+footer.nav .toggle-chip{
+  font-family:var(--mono); font-size:7.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  padding:3px 9px; border-radius:20px; border:1px solid rgba(255,255,255,.35); background:none;
+  color:rgba(255,255,255,.55); cursor:pointer;
+}
 
 /* ---------- sheet ---------- */
 .overlay{
@@ -532,6 +537,7 @@ textarea::placeholder{ color:var(--ink-4); }
   text-transform:uppercase; background:var(--black); color:var(--white);
   display:inline-block; padding:4px 12px; border-radius:4px; margin-top:4px;
 }
+.celebrate.winner .big{ font-size:52px; max-width:90vw; overflow-wrap:break-word; }
 .celebrate.fade{ animation:fadeOut .45s var(--ease) forwards; }
 @keyframes fadeOut{ to{ opacity:0; transform:scale(.96);} }
 .confetti{ position:absolute; top:50%; left:50%; animation:confettiBurst 1.15s var(--ease) forwards; }
@@ -688,6 +694,7 @@ textarea::placeholder{ color:var(--ink-4); }
 
 <footer class="nav">
   <span class="fl" id="demoHandle">WTFU</span>
+  <button type="button" class="toggle-chip" onclick="endGameTest()">End Game Test</button>
   <button class="reset" onclick="resetDemo()">Reset</button>
 </footer>
 
@@ -1271,6 +1278,7 @@ function tickClock(){
     refreshRealFeed(activeRound);
     if (phase === "live") toast("Round " + activeRound + " is live — all 33 prompts open, board back to zero");
     else if (phase === "break") toast("Round closed. Top 3 locked in — next round opens on the clock.");
+    else if (phase === "done") celebrateWinner();
   }
 }
 
@@ -1284,6 +1292,25 @@ const CHECKPOINTS = [
   {m:19*60+1,  t:"After the game"}
 ];
 let cpIdx = 0, holdTimer = null;
+/* Footer button — fast-forwards the demo clock to ~15s before the
+   final round ends, then lets the real per-second countdown carry
+   it the rest of the way so the actual "done" transition (and the
+   winner celebration hooked to it) fires naturally, same as it
+   would on the real clock. Demo-only, same as the checkpoint jumps. */
+function endGameTest(){
+  if (!DEMO_MODE) { toast("Demo mode is off — this only works during testing"); return; }
+  haptic(15);
+  const lastRound = ROUND_IDS[ROUND_IDS.length - 1];
+  simMinutes = ROUND_WINDOWS[lastRound].end - 1;
+  simSeconds = 45;
+  const st = eventState(simMinutes);
+  phase = st.phase; activeRound = st.round;
+  document.body.dataset.round = activeRound;
+  view = { mode:"buckets", bucket:null };
+  render(); tickClock();
+  toast("End-game test: ~15s left — watch the clock");
+}
+
 (function bindDemo(){
   const h = document.getElementById('demoHandle');
   const start = () => { if (!DEMO_MODE) return; holdTimer = setTimeout(() => {
@@ -1327,6 +1354,35 @@ function celebrate(pts){
   document.body.appendChild(wrap);
   setTimeout(() => wrap.classList.add('fade'), 1150);
   setTimeout(() => wrap.remove(), 1700);
+}
+
+/* Fires once, automatically, the instant the game transitions into
+   "done" — same trigger whether that's the real clock running out
+   or the End Game Test button fast-forwarding it. Announces whoever
+   is #1 on the board at that moment (the final round's standings,
+   since that's what's showing right as the game closes). */
+function celebrateWinner(){
+  const winner = currentBoard[0];
+  if (!winner) return;
+  haptic(30);
+  const wrap = document.createElement('div');
+  wrap.className = 'celebrate winner';
+  const cols = ["#7CE117","#0024FD","#FFF200","#F63EDA","#9C49D1","#FFFFFF"];
+  let inner = "";
+  for (let i = 0; i < 60; i++) {
+    const a = Math.random() * 360 * Math.PI / 180, d = 100 + Math.random() * 220;
+    const sz = 6 + Math.random() * 10;
+    const shape = ["50%","2px","50%","3px"][Math.floor(Math.random() * 4)];
+    inner += `<div class="confetti" style="width:${sz}px;height:${sz}px;border-radius:${shape};
+      background:${cols[i % cols.length]};border:1.5px solid #000;
+      --tx:translate(${Math.cos(a) * d}px,${Math.sin(a) * d - 80}px);
+      --rot:${(Math.random() - .5) * 900}deg;animation-delay:${Math.random() * .4}s"></div>`;
+  }
+  inner += `<div class="stack"><div class="big">🏆 ${winner.i}</div><div class="cap">wins the game!</div></div>`;
+  wrap.innerHTML = inner;
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.classList.add('fade'), 2400);
+  setTimeout(() => wrap.remove(), 2850);
 }
 
 let selectedFile = null;   // the actual File object for the prompt sheet currently open
