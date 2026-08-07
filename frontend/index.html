@@ -93,7 +93,7 @@ button{ font-family:inherit; color:inherit; }
 .canvas .wash.low{ top:auto; bottom:-34%; height:54%; background:none; }
 
 /* ---------- header ---------- */
-.topbar{ position:relative; z-index:2; flex-shrink:0; padding:12px 14px 2px; }
+.topbar{ position:relative; z-index:2; flex-shrink:0; padding:7px 14px 2px; }
 .brandline{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
 /* Real logo file now (Connie's wide horizontal lockup), not a
    recreation — embedded as a data URI so the file stays a single
@@ -105,23 +105,23 @@ button{ font-family:inherit; color:inherit; }
 }
 
 /* ---------- countdown ---------- */
-.clockbar{ position:relative; z-index:2; flex-shrink:0; padding:12px 14px 10px; }
+.clockbar{ position:relative; z-index:2; flex-shrink:0; padding:6px 14px 7px; }
 .clockcard{
-  position:relative; background:var(--black); border-radius:14px; padding:13px 16px 12px;
+  position:relative; background:var(--black); border-radius:14px; padding:9px 16px 8px;
   display:flex; align-items:center; justify-content:space-between; gap:12px;
   box-shadow:5px 5px 0 rgba(0,0,0,.14);
   overflow:hidden;
 }
 .ck-left{ position:relative; min-width:0; }
 .ck-round{
-  font-family:var(--display); font-weight:900; font-size:clamp(34px,10.8vw,46px); line-height:.95;
+  font-family:var(--display); font-weight:900; font-size:clamp(28px,9vw,38px); line-height:.95;
   color:var(--white); text-transform:uppercase; letter-spacing:-.02em;
 }
 .ck-round b{ color:var(--accent); transition:color .7s var(--ease); }
-.ck-status{ font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-top:5px; }
+.ck-status{ font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-top:3px; }
 .ck-right{ position:relative; text-align:right; flex-shrink:0; }
 .ck-time{
-  font-family:var(--display); font-weight:900; font-size:clamp(21px,7vw,31px); line-height:1;
+  font-family:var(--display); font-weight:900; font-size:clamp(18px,6vw,26px); line-height:1;
   color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.02em;
   transition:color .7s var(--ease);
 }
@@ -131,7 +131,7 @@ button{ font-family:inherit; color:inherit; }
 @keyframes blink{ 50%{ opacity:.4; } }
 
 /* ---------- section labels ---------- */
-.section-label{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:9px; }
+.section-label{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
 .section-label .grp{ display:flex; align-items:center; gap:8px; min-width:0; }
 .section-label .ttl{
   font-family:var(--display); font-weight:900; font-size:13px;
@@ -144,11 +144,7 @@ button{ font-family:inherit; color:inherit; }
 .live-tag span{ font-family:var(--mono); font-size:8px; font-weight:700; color:#000; letter-spacing:.1em; }
 
 /* ---------- leaderboard ---------- */
-.board-wrap{ position:relative; z-index:2; flex-shrink:0; padding:0 14px 11px; }
-.prize-note{
-  font-family:var(--mono); font-size:8.5px; font-weight:700; letter-spacing:.08em;
-  text-transform:uppercase; color:var(--ink-3); margin-top:8px; text-align:center;
-}
+.board-wrap{ position:relative; z-index:2; flex-shrink:0; padding:0 14px 6px; }
 .gallery-title{
   display:block; width:60%; background:var(--black); color:var(--white);
   font-family:var(--display); font-weight:900; font-size:20px; line-height:1.1;
@@ -156,7 +152,7 @@ button{ font-family:inherit; color:inherit; }
   padding:10px 14px; margin:0 0 16px; box-shadow:5px 5px 0 rgba(0,0,0,.14);
 }
 .gallery-cta{
-  display:inline-flex; align-items:center; gap:5px; background:var(--pink); color:#000;
+  display:inline-flex; align-items:center; gap:5px; background:var(--yellow); color:#000;
   border:2px solid var(--black); border-radius:20px; padding:6px 12px 5px;
   box-shadow:3px 3px 0 var(--black); font-family:var(--display); font-weight:900;
   font-size:9.5px; letter-spacing:.02em; text-transform:uppercase; cursor:pointer;
@@ -196,15 +192,14 @@ button{ font-family:inherit; color:inherit; }
 .lb-chip.me .lb-name{ color:var(--ink); font-weight:700; }
 .lb-score{ font-family:var(--display); font-weight:900; font-size:15px; line-height:1; }
 
-.you-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:16px; }
-.you-row .you-chip{ display:flex; align-items:center; gap:8px; min-width:0; }
-.you-row .you-chip .lb-av{ max-width:38px; flex-shrink:0; }
-.you-row .you-text{ min-width:0; display:flex; flex-direction:column; }
-.you-row .you-name{ font-size:10.5px; font-weight:700; color:var(--ink-3); text-transform:uppercase; letter-spacing:.04em; }
-.you-row .you-score{ font-family:var(--display); font-weight:900; font-size:16px; line-height:1.1; }
+.you-row{ display:flex; align-items:center; gap:9px; margin-top:8px; }
+.you-row .you-chip{ display:flex; flex-direction:column; align-items:center; gap:1px; flex-shrink:0; }
+.you-row .you-chip .lb-av{ max-width:30px; }
+.you-row .you-chip .you-label{ font-family:var(--mono); font-size:7px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.you-row .you-score{ font-family:var(--display); font-weight:900; font-size:17px; line-height:1; }
 .see-all-btn{
-  flex-shrink:0; background:none; border:1px solid var(--ink-4); border-radius:10px;
-  padding:9px 13px; font-family:var(--mono); font-size:8.5px; font-weight:700;
+  margin-left:auto; flex-shrink:0; background:none; border:1px solid var(--ink-4); border-radius:10px;
+  padding:8px 12px; font-family:var(--mono); font-size:8.5px; font-weight:700;
   letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); cursor:pointer;
 }
 
@@ -218,7 +213,7 @@ button{ font-family:inherit; color:inherit; }
 .rank-list .lb-chip .lb-score{ font-size:11px; }
 
 /* ---------- scroll pane ---------- */
-.pane-header{ position:relative; z-index:2; flex-shrink:0; padding:0 14px 9px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.pane-header{ position:relative; z-index:2; flex-shrink:0; padding:0 14px 5px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .pane-title{ font-family:var(--display); font-weight:900; font-size:13px; text-transform:uppercase; }
 .pane-count{ font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); display:flex; align-items:center; gap:9px; }
 .link-btn{ background:none; border:none; font:inherit; color:var(--ink); cursor:pointer; padding:0; text-decoration:underline; }
@@ -692,7 +687,6 @@ textarea::placeholder{ color:var(--ink-4); }
   </div>
   <div class="leaderboard-row" id="leaderboard"></div>
   <div class="you-row" id="youRow"></div>
-  <div class="prize-note" id="prizeNote">Top 3 when the clock hits zero take the round</div>
 </div>
 
 <div class="pane-header">
@@ -1648,16 +1642,11 @@ function render(){
   document.getElementById('youRow').innerHTML = `
     <span class="you-chip">
       <span class="lb-av"><span class="clip">${renderAvatarClip(me)}</span></span>
-      <span class="you-text">
-        <span class="you-name">You · #${myRank}</span>
-        <span class="you-score">${me.s} pts</span>
-      </span>
+      <span class="you-label">You</span>
     </span>
+    <span class="you-score">${me.s} <span class="mono" style="font-size:8.5px">#${myRank}</span></span>
     <button type="button" class="see-all-btn" onclick="openPlayers()">See all players →</button>`;
 
-  document.getElementById('prizeNote').textContent = phase === "live"
-    ? "Top 3 when the clock hits zero take the round"
-    : (phase === "break" ? "Round closed — these three took it" : "Final board");
   document.getElementById('boardAside').textContent = phase === "live" ? "Top 3 win" : "Locked";
 
   renderPane();
