@@ -173,10 +173,12 @@ button{ font-family:inherit; color:inherit; }
 .lb-av img{ width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .5s ease; }
 .lb-av img.in{ opacity:1; }
 .lb-av .rank{
-  position:absolute; top:-6px; right:-5px; width:18px; height:18px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center; border:2px solid var(--black);
-  font-family:var(--display); font-weight:900; font-size:10px; color:#000;
+  position:absolute; top:-8px; right:-8px; min-width:25px; height:21px; border-radius:11px;
+  display:flex; align-items:baseline; justify-content:center; gap:1px; padding:0 5px;
+  border:2px solid var(--black); color:#000;
 }
+.lb-av .rank .rk-main{ font-family:var(--display); font-weight:900; font-size:12px; line-height:1; }
+.lb-av .rank .rk-suf{ font-family:var(--display); font-weight:900; font-size:6px; line-height:1; }
 .lb-av .star{
   position:absolute; bottom:-3px; right:-3px; width:15px; height:15px; border-radius:50%;
   background:var(--accent); color:var(--on-accent); font-size:7px; border:2px solid var(--black);
@@ -187,9 +189,9 @@ button{ font-family:inherit; color:inherit; }
    so first place visibly outranks second, second outranks third.
    Comes after .me so a top-3 "you" still shows the medal, not just
    the generic accent ring — the star badge already marks "this is you". */
-.lb-chip.r1 .lb-av{ border-width:3px; border-color:#E8B923; box-shadow:0 0 0 3px rgba(232,185,35,.4), 0 0 16px 2px rgba(232,185,35,.55); }
-.lb-chip.r2 .lb-av{ border-width:2.5px; border-color:#B9C0C8; box-shadow:0 0 0 2px rgba(185,192,200,.35), 0 0 10px 1px rgba(185,192,200,.4); }
-.lb-chip.r3 .lb-av{ border-width:2px; border-color:#CD7F32; box-shadow:0 0 0 2px rgba(205,127,50,.3), 0 0 7px rgba(205,127,50,.3); }
+.lb-chip.r1 .lb-av{ border-width:3px; border-color:var(--green); box-shadow:0 0 0 3px rgba(124,225,23,.4), 0 0 16px 2px rgba(124,225,23,.55); }
+.lb-chip.r2 .lb-av{ border-width:2.5px; border-color:var(--yellow); box-shadow:0 0 0 2px rgba(255,242,0,.4), 0 0 10px 1px rgba(255,242,0,.45); }
+.lb-chip.r3 .lb-av{ border-width:2px; border-color:var(--pink); box-shadow:0 0 0 2px rgba(246,62,218,.35), 0 0 7px rgba(246,62,218,.35); }
 .lb-name{ font-size:10px; font-weight:600; color:var(--ink-2); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lb-chip.me .lb-name{ color:var(--ink); font-weight:700; }
 .lb-score{ font-family:var(--display); font-weight:900; font-size:15px; line-height:1; }
@@ -209,7 +211,9 @@ button{ font-family:inherit; color:inherit; }
 .rank-list{ display:grid; grid-template-columns:repeat(5,1fr); gap:16px 4px; }
 .rank-list .lb-chip{ width:auto; gap:3px; }
 .rank-list .lb-chip .lb-av{ max-width:40px; }
-.rank-list .lb-chip .rank{ width:15px; height:15px; font-size:8px; top:-4px; right:-3px; }
+.rank-list .lb-chip .rank{ min-width:19px; height:15px; padding:0 3px; top:-5px; right:-5px; }
+.rank-list .lb-chip .rank .rk-main{ font-size:8.5px; }
+.rank-list .lb-chip .rank .rk-suf{ font-size:4.5px; }
 .rank-list .lb-chip .lb-name{ font-size:8.5px; }
 .rank-list .lb-chip .lb-score{ font-size:11px; }
 
@@ -248,10 +252,11 @@ button{ font-family:inherit; color:inherit; }
 body.texture-on .bucket::before{
   content:""; position:absolute; inset:0; z-index:0; pointer-events:none; border-radius:inherit;
   background-image:
-    radial-gradient(circle, rgba(0,0,0,.24) 1.1px, transparent 1.3px),
-    radial-gradient(circle at 28% 18%, rgba(255,255,255,.45), transparent 55%);
-  background-size: 7px 7px, 100% 100%;
-  mix-blend-mode: multiply;
+    radial-gradient(circle, rgba(255,255,255,.3) 1px, transparent 1.4px),
+    radial-gradient(circle at 25% 15%, rgba(255,255,255,.3), transparent 60%);
+  background-size: 6px 6px, 100% 100%;
+  mix-blend-mode: soft-light;
+  opacity:.7;
 }
 .bucket .motion{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-start; width:100%; }
 .pt-chip{
@@ -682,7 +687,7 @@ textarea::placeholder{ color:var(--ink-4); }
 
 <div class="board-wrap">
   <div class="section-label">
-    <span class="grp"><span class="ttl">Who's playing</span></span>
+    <span class="grp"><span class="ttl">Who's winning</span></span>
     <span class="aside" id="boardAside">Top 3 win</span>
   </div>
   <div class="leaderboard-row" id="leaderboard"></div>
@@ -752,15 +757,16 @@ const ROUND_WINDOWS = {
    again means editing ROUND_WINDOWS only, not five different arrays */
 const ROUND_IDS = Object.keys(ROUND_WINDOWS).map(Number);
 
-/* shared gold/silver/bronze badge colors — used by both the top-3
-   podium and the full "all players" list so they match exactly */
-const MEDAL_HEX = {1:"#E8B923", 2:"#B9C0C8", 3:"#CD7F32"};
+/* shared brand-color rank badges — used by both the top-3 podium
+   and the full "all players" list so they match exactly */
+const MEDAL_HEX = {1:"var(--green)", 2:"var(--yellow)", 3:"var(--pink)"};
+const ordinalSuffix = (n) => (n === 1 ? "ST" : n === 2 ? "ND" : n === 3 ? "RD" : "TH");
 function rankChip(p, rank){
   return `<div class="lb-chip ${p.me ? 'me' : ''} ${rank <= 3 ? 'prize r' + rank : ''}">
     <span class="lb-av">
       <span class="clip">${renderAvatarClip(p)}</span>
       ${rank <= 3 ? `<span class="sparks">${'<i></i>'.repeat(4 - rank)}</span>` : ``}
-      <span class="rank" style="background:${MEDAL_HEX[rank] || '#e5e5e5'}">${rank}</span>
+      <span class="rank" style="background:${MEDAL_HEX[rank] || '#e5e5e5'}"><span class="rk-main">${rank}</span><span class="rk-suf">${ordinalSuffix(rank)}</span></span>
       ${p.me ? `<span class="star">★</span>` : ``}
     </span>
     <span class="lb-name">${p.i}</span>
