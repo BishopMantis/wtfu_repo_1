@@ -1325,8 +1325,22 @@ function endGameTest(){
   ['pointerup','pointerleave','pointercancel'].forEach(e => h.addEventListener(e, stop));
 })();
 
-function openSheet(id){ haptic(8); document.getElementById(id).classList.add('open'); }
-function closeSheet(id){ document.getElementById(id).classList.remove('open'); }
+/* Same fix as the bucket/card navigation below: opening a sheet
+   pushes a real history entry, so the phone's hardware/gesture back
+   button closes the sheet instead of leaving the page entirely.
+   closeSheet() routes through history.back() too (rather than just
+   hiding the sheet directly) so the X button, tapping the backdrop,
+   and the phone's back button all agree and never leave a stray
+   history entry behind. */
+function openSheet(id){
+  haptic(8);
+  history.pushState({ wtfuSheet: id }, "", location.href);
+  document.getElementById(id).classList.add('open');
+}
+function closeSheet(id){
+  if (history.state && history.state.wtfuSheet === id) history.back();
+  else document.getElementById(id).classList.remove('open');
+}
 
 function toast(msg, ms=2800){
   const t = document.createElement('div');
@@ -1579,6 +1593,13 @@ function backToBuckets(){
 }
 window.addEventListener("popstate", e => {
   const st = e.state;
+  document.querySelectorAll('.overlay.open').forEach(o => {
+    if (!st || st.wtfuSheet !== o.id) o.classList.remove('open');
+  });
+  if (st && st.wtfuSheet) {
+    document.getElementById(st.wtfuSheet).classList.add('open');
+    return;  // just a sheet open/close — the bucket/card pane underneath is untouched
+  }
   if (st && st.wtfuView === "cards") {
     swap(() => { view = { mode:"cards", bucket: st.bucket }; renderPane(); });
   } else {
