@@ -1860,14 +1860,14 @@ function buildAvatarGate(){
       <div class="gate-card-scroll">
         <div class="gate-mark"><img src="${LOGO_SRC}" alt="Wake The F Up"></div>
         <h2>Pick your avatar</h2>
-        <p>Grayed-out ones are already taken. Tap one to make it yours — or upload a photo instead.</p>
-        <div class="icon-grid" id="iconGrid">${grid}</div>
+        <p>Upload a photo for your profile, or pick an icon instead — grayed-out ones are already taken.</p>
         <div class="avatar-photo-row">
           <button type="button" class="gate-btn" id="avatarPhotoBtn">
-            <span>Or upload a photo</span><span class="gate-handle" id="avatarPhotoStatus">optional</span>
+            <span>Upload a photo</span><span class="gate-handle" id="avatarPhotoStatus">recommended</span>
           </button>
           <input type="file" id="avatarPhotoInput" accept="image/*" style="display:none">
         </div>
+        <div class="icon-grid" id="iconGrid">${grid}</div>
       </div>
       <div class="gate-card-actions">
         <button class="action-btn" id="avatarContinue" disabled>Pick one to continue</button>
@@ -1948,7 +1948,7 @@ function buildAvatarGate(){
 function pickAvatarIcon(shape, color){
   haptic(8);
   pendingAvatar = { type:"icon", shape, color };
-  document.getElementById('avatarPhotoStatus').textContent = "optional";
+  document.getElementById('avatarPhotoStatus').textContent = "recommended";
   document.querySelectorAll('#iconGrid .icon-token').forEach(b =>
     b.classList.toggle('picked', b.dataset.id === shape + "-" + color));
   const btn = document.getElementById('avatarContinue');
