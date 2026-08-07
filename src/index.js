@@ -9,7 +9,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-const VALID_ROUNDS = [1, 2, 3];
+const VALID_ROUNDS = [1, 2];
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 function json(data, status = 200) {
@@ -110,7 +110,7 @@ async function handleCreateSubmission(request, env) {
     return json({ error: "prompt_id is required" }, 400);
   }
   if (!VALID_ROUNDS.includes(round)) {
-    return json({ error: "round must be 1, 2, or 3" }, 400);
+    return json({ error: "round must be 1 or 2" }, 400);
   }
   if (typeof points !== "number" || !Number.isFinite(points) || points < 0) {
     return json({ error: "points must be a non-negative number" }, 400);
@@ -139,7 +139,7 @@ async function handleFeed(url, env) {
   if (roundParam !== null) {
     round = Number(roundParam);
     if (!VALID_ROUNDS.includes(round)) {
-      return json({ error: "round must be 1, 2, or 3" }, 400);
+      return json({ error: "round must be 1 or 2" }, 400);
     }
   }
 
@@ -170,7 +170,7 @@ async function handleLeaderboard(url, env) {
   if (roundParam !== null) {
     round = Number(roundParam);
     if (!VALID_ROUNDS.includes(round)) {
-      return json({ error: "round must be 1, 2, or 3" }, 400);
+      return json({ error: "round must be 1 or 2" }, 400);
     }
   }
 
