@@ -918,6 +918,11 @@ const DEMO_MODE = true;
 const API_BASE = "https://wtfu-repo-1.justinlm808.workers.dev";
 const PLAYER_ID_KEY = "wtfu_player_id_v1";
 let myPlayerId = null;
+/* mirrors the backend's last_at tie-break for "You" — updated the
+   instant you submit (see submit()) so your own tie-break time
+   doesn't lag behind the ~10s leaderboard poll. Unix seconds, same
+   unit as the server's created_at. */
+let myLastSubmissionAt = null;
 try { myPlayerId = localStorage.getItem(PLAYER_ID_KEY); } catch(e){}
 
 function encodeAvatar(a){
@@ -1498,6 +1503,7 @@ function submit(id){
   const realSrc = (!isText && selectedFile) ? URL.createObjectURL(selectedFile) : undefined;
   const fileToUpload = selectedFile;
 
+  myLastSubmissionAt = Math.floor(Date.now() / 1000);
   rounds[submittedRound].done.push(id);
   rounds[submittedRound].feed.unshift(mk({
     who:"You", mine:true,
@@ -1672,8 +1678,10 @@ function render(){
   /* a:5 is the spare portrait — keeps "You" from wearing J.M.'s face. */
   const realRows = (realLeaderboardCache[activeRound] || [])
     .filter(r => r.id !== myPlayerId)
-    .map(r => ({ i:(r.name || "Player").split(" ")[0], s:r.score, real:true, avatarStr:r.avatar }));
-  const board = [...(DEMO_MODE ? MOCK[activeRound] : []), ...realRows, {i:"You", s:score, me:true, a:5}].sort((a,b) => b.s - a.s);
+    .map(r => ({ i:(r.name || "Player").split(" ")[0], s:r.score, real:true, avatarStr:r.avatar, lastAt:r.last_at }));
+  const board = [...(DEMO_MODE ? MOCK[activeRound] : []), ...realRows, {i:"You", s:score, me:true, a:5, lastAt:myLastSubmissionAt}]
+    /* ties go to whoever reached that score first, not array order */
+    .sort((a,b) => (b.s - a.s) || ((a.lastAt ?? Infinity) - (b.lastAt ?? Infinity)));
   currentBoard = board;  // full order, kept for the "See all players" sheet
 
   document.getElementById('leaderboard').innerHTML = board.slice(0, 3)
@@ -1841,6 +1849,7 @@ function loadProgress(){
 }
 
 function resetDemo(){
+  myLastSubmissionAt = null;
   ROUND_IDS.forEach(r => { rounds[r].done = []; rounds[r].feed = []; });
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
   simMinutes = 12*60 + 5; simSeconds = 0;

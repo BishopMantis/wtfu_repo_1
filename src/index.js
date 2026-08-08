@@ -174,13 +174,16 @@ async function handleLeaderboard(url, env) {
     }
   }
 
+  /* tie-break: whoever's most recent submission (the one that set
+     their current total) landed earliest wins the tie — "first to
+     reach that score," not an arbitrary DB ordering */
   const query = round
-    ? `SELECT p.id, p.name, p.avatar, COALESCE(SUM(s.points), 0) AS score
+    ? `SELECT p.id, p.name, p.avatar, COALESCE(SUM(s.points), 0) AS score, MAX(s.created_at) AS last_at
        FROM players p LEFT JOIN submissions s ON s.player_id = p.id AND s.round = ?
-       GROUP BY p.id ORDER BY score DESC`
-    : `SELECT p.id, p.name, p.avatar, COALESCE(SUM(s.points), 0) AS score
+       GROUP BY p.id ORDER BY score DESC, last_at ASC`
+    : `SELECT p.id, p.name, p.avatar, COALESCE(SUM(s.points), 0) AS score, MAX(s.created_at) AS last_at
        FROM players p LEFT JOIN submissions s ON s.player_id = p.id
-       GROUP BY p.id ORDER BY score DESC`;
+       GROUP BY p.id ORDER BY score DESC, last_at ASC`;
 
   const stmt = round ? env.DB.prepare(query).bind(round) : env.DB.prepare(query);
   const { results } = await stmt.all();
