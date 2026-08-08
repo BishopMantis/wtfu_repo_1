@@ -1775,9 +1775,9 @@ function renderPane(){
     pane.innerHTML = `
       <div class="locked-panel">
         <div class="lk">${phase === "break" ? "⏳" : "🏁"}</div>
-        <h3>${phase === "break" ? "Next round hasn't opened" : "That's the whole game"}</h3>
+        <h3>${phase === "break" ? "Not yet, hotshot." : "That's the whole game"}</h3>
         <p>${phase === "break"
-          ? "Nothing can be posted between rounds, so your points always land in the right one. The board resets the moment the clock starts."
+          ? `Round ${activeRound} kicks off soon — save your energy. Prompts unlock the second the clock hits zero.`
           : winnersLine}</p>
       </div>` + feedBlock;
     newUid = null;
