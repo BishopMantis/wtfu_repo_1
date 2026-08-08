@@ -909,11 +909,19 @@ const MOCK_AVATARS = {
    unavailable the game keeps working in local-only mode exactly
    like it did before this was wired up.
    ============================================================ */
-/* Set to false right before the real event goes live — hides the
-   canned demo leaderboard names and the fake activity feed, leaving
-   only real registered players. Not exposed anywhere in the UI;
-   only a code push can change this. */
+/* Controls the CLOCK only: fixed jumpable test clock (true) vs the
+   real Pacific-time schedule (false). Keep this true while still
+   testing at arbitrary times of day — flipping it off locks the
+   game to the actual noon-2/5-7pm windows. Neither flag is exposed
+   anywhere in the UI; both only change via a code push. */
 const DEMO_MODE = true;
+/* Controls PLACEHOLDER CONTENT only: the canned demo leaderboard
+   names, the fake activity feed, and the 5 reserved demo avatar
+   combos. Set to false to test with a clean, real-players-only
+   board. Independent of DEMO_MODE on purpose — you can run a real,
+   placeholder-free test at any time of day by leaving the clock
+   flexible while turning this off. */
+const SHOW_PLACEHOLDERS = false;
 
 const API_BASE = "https://wtfu-repo-1.justinlm808.workers.dev";
 const PLAYER_ID_KEY = "wtfu_player_id_v1";
@@ -1195,7 +1203,7 @@ let simMinutes = 12*60 + 5, simSeconds = 0;
 let phase = "live", activeRound = 1;
 let view = { mode:"buckets", bucket:null };
 let currentBoard = [];  // full sorted leaderboard from the last render(), for the "See all players" sheet
-let live = DEMO_MODE ? [...MOCK_FEED] : [];
+let live = SHOW_PLACEHOLDERS ? [...MOCK_FEED] : [];
 let incomingIdx = 0, newUid = null;
 
 const rounds = Object.fromEntries(ROUND_IDS.map(r => [r, {done:[], feed:[]}]));
@@ -1679,7 +1687,7 @@ function render(){
   const realRows = (realLeaderboardCache[activeRound] || [])
     .filter(r => r.id !== myPlayerId)
     .map(r => ({ i:(r.name || "Player").split(" ")[0], s:r.score, real:true, avatarStr:r.avatar, lastAt:r.last_at }));
-  const board = [...(DEMO_MODE ? MOCK[activeRound] : []), ...realRows, {i:"You", s:score, me:true, a:5, lastAt:myLastSubmissionAt}]
+  const board = [...(SHOW_PLACEHOLDERS ? MOCK[activeRound] : []), ...realRows, {i:"You", s:score, me:true, a:5, lastAt:myLastSubmissionAt}]
     /* ties go to whoever reached that score first, not array order */
     .sort((a,b) => (b.s - a.s) || ((a.lastAt ?? Infinity) - (b.lastAt ?? Infinity)));
   currentBoard = board;  // full order, kept for the "See all players" sheet
@@ -1809,7 +1817,7 @@ function stagger(nodes){
 }
 
 setInterval(() => {
-  if (!DEMO_MODE || phase !== "live" || incomingIdx >= INCOMING.length) return;
+  if (!SHOW_PLACEHOLDERS || phase !== "live" || incomingIdx >= INCOMING.length) return;
   live.unshift(INCOMING[incomingIdx]);
   newUid = INCOMING[incomingIdx].uid;
   incomingIdx++;
@@ -1853,7 +1861,7 @@ function resetDemo(){
   ROUND_IDS.forEach(r => { rounds[r].done = []; rounds[r].feed = []; });
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
   simMinutes = 12*60 + 5; simSeconds = 0;
-  incomingIdx = 0; live = DEMO_MODE ? [...MOCK_FEED] : [];
+  incomingIdx = 0; live = SHOW_PLACEHOLDERS ? [...MOCK_FEED] : [];
   view = { mode:"buckets", bucket:null };
   const st = eventState(simMinutes); phase = st.phase; activeRound = st.round;
   document.body.dataset.round = activeRound;
@@ -1942,7 +1950,7 @@ function buildAvatarGate(){
   wrap.id = 'avatarGate';
 
   const grid = SHAPE_IDS.map(shape => AVATAR_COLORS.map(col => {
-    const taken = DEMO_MODE && Object.values(MOCK_AVATARS).some(a => a.shape === shape && a.color === col.id);
+    const taken = SHOW_PLACEHOLDERS && Object.values(MOCK_AVATARS).some(a => a.shape === shape && a.color === col.id);
     const id = shape + "-" + col.id;
     return `<button type="button" class="icon-token ${taken ? 'taken' : ''}" data-id="${id}"
               ${taken ? 'disabled' : `onclick="pickAvatarIcon('${shape}','${col.id}')"`}>
