@@ -997,6 +997,39 @@ async function refreshRealLeaderboard(round){
   } catch(e){ /* best-effort — keep showing whatever we had */ }
 }
 
+/* cumulative score across every round — the per-round caches above
+   are what "who's winning right now, this round" is built from, but
+   the actual end-of-game winner needs a real total, not just
+   whatever round happened to be active last. Polled continuously
+   (not just at game-end) so it's already warm by the time the game
+   actually ends. */
+let overallLeaderboardCache = [];
+async function refreshOverallLeaderboard(){
+  try {
+    const res = await fetch(API_BASE + "/api/leaderboard");
+    if (!res.ok) return;
+    const data = await res.json();
+    overallLeaderboardCache = data.leaderboard || [];
+    if (phase === "done") renderPane();
+  } catch(e){ /* best-effort — keep showing whatever we had */ }
+}
+
+function overallBoard(){
+  const mockTotals = {};
+  if (SHOW_PLACEHOLDERS) {
+    ROUND_IDS.forEach(r => (MOCK[r] || []).forEach(p => {
+      mockTotals[p.i] = mockTotals[p.i] || { i:p.i, s:0, a:p.a };
+      mockTotals[p.i].s += p.s;
+    }));
+  }
+  const realRows = overallLeaderboardCache
+    .filter(r => r.id !== myPlayerId)
+    .map(r => ({ i:(r.name || "Player").split(" ")[0], s:r.score, real:true, avatarStr:r.avatar, lastAt:r.last_at }));
+  const myTotal = ROUND_IDS.reduce((sum, r) => sum + roundScore(r), 0);
+  return [...Object.values(mockTotals), ...realRows, {i:"You", s:myTotal, me:true, a:5, lastAt:myLastSubmissionAt}]
+    .sort((a,b) => (b.s - a.s) || ((a.lastAt ?? Infinity) - (b.lastAt ?? Infinity)));
+}
+
 let realFeedCache = Object.fromEntries(ROUND_IDS.map(r => [r, []]));
 async function refreshRealFeed(round){
   try {
@@ -1290,7 +1323,7 @@ function tickClock(){
     refreshRealFeed(activeRound);
     if (phase === "live") toast("Round " + activeRound + " is live — all 33 prompts open, board back to zero");
     else if (phase === "break") toast("Round closed. Top 3 locked in — next round opens on the clock.");
-    else if (phase === "done") celebrateWinner();
+    else if (phase === "done") { refreshOverallLeaderboard(); celebrateWinner(); }
   }
 }
 
@@ -1385,10 +1418,10 @@ function celebrate(pts){
 /* Fires once, automatically, the instant the game transitions into
    "done" — same trigger whether that's the real clock running out
    or the End Game Test button fast-forwarding it. Announces whoever
-   is #1 on the board at that moment (the final round's standings,
-   since that's what's showing right as the game closes). */
+   has the highest score SUMMED ACROSS ALL ROUNDS — the real overall
+   winner, not just whoever led the final round. */
 function celebrateWinner(){
-  const winner = currentBoard[0];
+  const winner = overallBoard()[0];
   if (!winner) return;
   haptic(30);
   const wrap = document.createElement('div');
@@ -1732,13 +1765,21 @@ function renderPane(){
   if (phase !== "live") {
     title.textContent = phase === "break" ? "Game locked" : "Game over";
     count.innerHTML = "";
+    const winnersLine = phase === "done"
+      ? (() => {
+          const top3 = overallBoard().slice(0, 3).map(p => p.i);
+          return top3.length
+            ? `🏆 ${top3.join(", ")} — head to our booth to collect your prize!`
+            : "Head to our booth to collect your prize!";
+        })()
+      : "";
     pane.innerHTML = `
       <div class="locked-panel">
         <div class="lk">${phase === "break" ? "⏳" : "🏁"}</div>
         <h3>${phase === "break" ? "Next round hasn't opened" : "That's the whole game"}</h3>
         <p>${phase === "break"
           ? "Nothing can be posted between rounds, so your points always land in the right one. The board resets the moment the clock starts."
-          : "All three rounds are done. Winners are being called at the booth."}</p>
+          : winnersLine}</p>
       </div>` + feedBlock;
     newUid = null;
     return;
@@ -2102,6 +2143,8 @@ function buildFollowGate(){
   setInterval(() => refreshRealLeaderboard(activeRound), 10000);
   refreshRealFeed(activeRound);
   setInterval(() => refreshRealFeed(activeRound), 10000);
+  refreshOverallLeaderboard();
+  setInterval(refreshOverallLeaderboard, 10000);
 
   let entrySeen = false;
   try { entrySeen = !!localStorage.getItem(ENTRY_KEY); } catch(e){}
