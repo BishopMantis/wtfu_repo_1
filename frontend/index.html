@@ -1231,6 +1231,20 @@ const INCOMING = [
 
 /* ---------- state ---------- */
 let simMinutes = 12*60 + 5, simSeconds = 0;
+/* every device's local clock can drift (auto-time-sync off, phone
+   clock just wrong) so the round countdown is corrected against the
+   backend's clock instead of trusting each phone's own. Refreshed
+   periodically in boot() so drift can't accumulate mid-event. */
+let serverTimeOffsetMs = 0;
+async function syncServerTime(){
+  try {
+    const t0 = Date.now();
+    const res = await fetch(API_BASE + "/api/time");
+    const data = await res.json();
+    const t1 = Date.now();
+    serverTimeOffsetMs = data.now - Math.round((t0 + t1) / 2);
+  } catch(e){}
+}
 let phase = "live", activeRound = 1;
 let view = { mode:"buckets", bucket:null };
 let currentBoard = [];  // full sorted leaderboard from the last render(), for the "See all players" sheet
@@ -1267,7 +1281,7 @@ function currentClockReading(){
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Los_Angeles', hour12: false,
     hour: 'numeric', minute: 'numeric', second: 'numeric'
-  }).formatToParts(new Date());
+  }).formatToParts(new Date(Date.now() + serverTimeOffsetMs));
   const get = (t) => Number(parts.find((p) => p.type === t).value);
   let hour = get('hour');
   if (hour === 24) hour = 0;  // some engines report midnight as "24" with hour12:false
@@ -2127,15 +2141,17 @@ function buildFollowGate(){
   };
 }
 
-(function boot(){
+(async function boot(){
   document.getElementById('headerLogo').src = LOGO_SRC;
   loadProgress();
   loadAvatar();
+  if (!DEMO_MODE) await syncServerTime();
   const st = eventState(currentClockReading().mins);
   phase = st.phase; activeRound = st.round;
   document.body.dataset.round = activeRound;
   render(); tickClock();
   setInterval(tickClock, 1000);
+  if (!DEMO_MODE) setInterval(syncServerTime, 60000);
 
   refreshRealLeaderboard(activeRound);
   setInterval(() => refreshRealLeaderboard(activeRound), 10000);

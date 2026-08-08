@@ -202,6 +202,9 @@ export default {
     }
 
     try {
+      if (pathname === "/api/time" && method === "GET") {
+        return withCors(json({ now: Date.now() }));
+      }
       if (pathname === "/api/players" && method === "POST") {
         return withCors(await handleCreatePlayer(request, env));
       }
