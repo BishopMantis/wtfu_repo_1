@@ -144,7 +144,7 @@ async function handleFeed(url, env) {
   }
 
   const limitParam = Number(url.searchParams.get("limit"));
-  const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 100) : 50;
+  const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 1000) : 50;
 
   const query = round
     ? `SELECT s.id, s.player_id, s.prompt_id, s.round, s.points, s.media_url, s.text_answer, s.created_at,

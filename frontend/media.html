@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+<title>WTFU — Event Media</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #F9FAFA; color: #000;
+  }
+  header {
+    background: #000; color: #fff; padding: 18px 16px; position: sticky; top: 0; z-index: 5;
+  }
+  header h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; }
+  header p { margin: 0; font-size: 13px; color: #ccc; }
+  .wrap { padding: 16px; }
+  .status { padding: 40px 16px; text-align: center; color: #666; }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;
+  }
+  .card {
+    background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #eee;
+    display: flex; flex-direction: column;
+  }
+  .card .media-box { aspect-ratio: 1 / 1; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .card img, .card video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .meta { padding: 8px 10px; }
+  .card .name { font-weight: 700; font-size: 13px; }
+  .card .sub { font-size: 11px; color: #777; margin-top: 2px; }
+  .card a.open {
+    display: block; text-align: center; margin: 0 10px 10px; padding: 7px; border-radius: 8px;
+    background: #000; color: #fff; text-decoration: none; font-size: 12px; font-weight: 700;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>WTFU — Event Media</h1>
+  <p id="countLine">Loading everything from the event…</p>
+</header>
+<div class="wrap">
+  <div id="status" class="status">Loading media…</div>
+  <div id="grid" class="grid"></div>
+</div>
+<script>
+const API_BASE = "https://wtfu-repo-1.justinlm808.workers.dev";
+
+async function load() {
+  const statusEl = document.getElementById('status');
+  const countLine = document.getElementById('countLine');
+  const grid = document.getElementById('grid');
+  try {
+    const res = await fetch(API_BASE + "/api/feed?limit=1000");
+    const data = await res.json();
+    const items = (data.feed || []).filter(item => item.media_url);
+    if (!items.length) {
+      statusEl.textContent = "No photos or videos found.";
+      countLine.textContent = "0 items";
+      return;
+    }
+    statusEl.remove();
+    countLine.textContent = items.length + " photo" + (items.length === 1 ? "" : "s") + "/videos — tap Open, then press and hold to save";
+    grid.innerHTML = items.map(item => {
+      const url = API_BASE + item.media_url;
+      const isVideo = /\.(mp4|mov|webm|m4v)$/i.test(item.media_url);
+      const mediaTag = isVideo
+        ? `<video src="${url}" muted playsinline preload="metadata"></video>`
+        : `<img src="${url}" loading="lazy" alt="">`;
+      const name = (item.name || "Player").replace(/</g, "&lt;");
+      return `
+        <div class="card">
+          <div class="media-box">${mediaTag}</div>
+          <div class="meta">
+            <div class="name">${name}</div>
+            <div class="sub">Round ${item.round}</div>
+          </div>
+          <a class="open" href="${url}" target="_blank" rel="noopener">Open ↗</a>
+        </div>`;
+    }).join("");
+  } catch (e) {
+    statusEl.textContent = "Couldn't load media — check your connection and reload.";
+  }
+}
+load();
+</script>
+</body>
+</html>
