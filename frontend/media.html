@@ -63,7 +63,7 @@ async function load() {
     statusEl.remove();
     countLine.textContent = items.length + " photo" + (items.length === 1 ? "" : "s") + "/videos — tap Open, then press and hold to save";
     grid.innerHTML = items.map(item => {
-      const url = API_BASE + item.media_url;
+      const url = /^https?:\/\//i.test(item.media_url) ? item.media_url : API_BASE + item.media_url;
       const isVideo = /\.(mp4|mov|webm|m4v)$/i.test(item.media_url);
       const mediaTag = isVideo
         ? `<video src="${url}" muted playsinline preload="metadata"></video>`
