@@ -3,6 +3,8 @@
 // uploaded R2 objects can actually be served back to the feed/leaderboard
 // without making the bucket publicly readable.
 
+import { Zip, ZipPassThrough } from "fflate";
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -95,6 +97,55 @@ async function handleMedia(pathname, env) {
   headers.set("etag", object.httpEtag);
   headers.set("cache-control", "public, max-age=31536000, immutable");
   return new Response(object.body, { headers });
+}
+
+/* Streams every object in the bucket into one .zip, uncompressed
+   (ZipPassThrough) since photos/videos are already compressed formats —
+   avoids burning CPU time re-compressing them for no size benefit. */
+async function handleExportZip(env) {
+  let objects = [];
+  let cursor;
+  do {
+    const page = await env.UPLOADS.list({ cursor });
+    objects = objects.concat(page.objects);
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+
+  const zip = new Zip((err, chunk, final) => {
+    if (err) { writer.abort(err); return; }
+    writer.write(chunk);
+    if (final) writer.close();
+  });
+
+  (async () => {
+    try {
+      for (const obj of objects) {
+        const entry = new ZipPassThrough(obj.key);
+        zip.add(entry);
+        const object = await env.UPLOADS.get(obj.key);
+        if (!object) { entry.push(new Uint8Array(0), true); continue; }
+        const reader = object.body.getReader();
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) { entry.push(new Uint8Array(0), true); break; }
+          entry.push(value, false);
+        }
+      }
+      zip.end();
+    } catch (err) {
+      writer.abort(err);
+    }
+  })();
+
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "application/zip",
+      "Content-Disposition": 'attachment; filename="wtfu-event-media.zip"',
+    },
+  });
 }
 
 async function handleCreateSubmission(request, env) {
@@ -216,6 +267,9 @@ export default {
       }
       if (pathname.startsWith("/api/media/") && method === "GET") {
         return withCors(await handleMedia(pathname, env));
+      }
+      if (pathname === "/api/export-zip" && method === "GET") {
+        return withCors(await handleExportZip(env));
       }
       if (pathname === "/api/submissions" && method === "POST") {
         return withCors(await handleCreateSubmission(request, env));
